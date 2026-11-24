@@ -1,8 +1,8 @@
 # Laborübung 1: Analyse der A2A-Kommunikation mit Wireshark
 
-> Gegenstück in Teil 1: [Analyse der LLM-Kommunikation mit Wireshark](../mcp/04_client_llm.md)
+> Gegenstück in Teil 1: [Analyse der LLM-Kommunikation mit Wireshark](04_client_llm.md)
 
-![line](../images/banner.png)
+![line](images/banner.png)
 
 ## Lernziele
 
@@ -21,7 +21,7 @@ Nach Abschluss dieser Laborübung können Sie:
 
 ### Software
 - Wireshark mit **Npcap** und der Option **„Support loopback traffic“**
-- Python-venv mit den Bibliotheken aus `requirements.txt` [siehe Hinführung zu A2A](01_lab.md)
+- Python-venv mit den Bibliotheken aus `requirements.txt` [siehe Hinführung zu A2A](06_a2a_lab.md)
 - Für Teil C: Ollama mit `qwen2.5-coder:3b`
 
 ### Vorbereitung
@@ -302,8 +302,8 @@ data: {"result": {"statusUpdate": {"taskId": "3dc7...", "status": {"state": "TAS
 - Date: 11/2026
 - Version: v1.0
 
-![line](../images/banner.png)
+![line](images/banner.png)
 <p align="center">
-<a href="03_architecture.md"><img src="../images/previous.png" width="150px"></a>
-<a href="05_protokoll.md"><img src="../images/next.png" width="150px"></a>
+<a href="08_a2a_architecture.md"><img src="images/previous.png" width="150px"></a>
+<a href="10_a2a_protokoll.md"><img src="images/next.png" width="150px"></a>
 </p>

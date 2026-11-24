@@ -1,6 +1,6 @@
 # Sachwissen - Systemarchitektur mit A2A, MCP und LLM
 
-![line](../images/banner.png)
+![line](images/banner.png)
 
 ## Überblick: Wer spricht mit wem?
 
@@ -19,7 +19,7 @@ flowchart LR
     MS --> T[Tool-Funktion<br/>patchkabel_bestand_abfragen]
 ```
 
-Im Vergleich zu [*MCP-Basics*](../mcp/03_architecture.md) ist eine Ebene hinzugekommen: Zwischen dem Agenten, der mit dem Benutzer spricht, und dem Werkzeug steht jetzt ein **zweiter Agent** mit eigener Zuständigkeit.
+Im Vergleich zu [*MCP-Basics*](03_architecture.md) ist eine Ebene hinzugekommen: Zwischen dem Agenten, der mit dem Benutzer spricht, und dem Werkzeug steht jetzt ein **zweiter Agent** mit eigener Zuständigkeit.
 
 ---
 
@@ -173,7 +173,7 @@ A2A-Version: 1.0
 
 ### 4️⃣ Interne Werkzeugnutzung
 
-Der Lager-Agent ruft sein MCP-Tool auf, wie in [*MCP-Basics*](../mcp/03_architecture.md) beschrieben. Diese Kommunikation läuft über **stdio** zwischen zwei Prozessen auf demselben Rechner. Der Planungs-Agent ist daran nicht beteiligt.
+Der Lager-Agent ruft sein MCP-Tool auf, wie in [*MCP-Basics*](03_architecture.md) beschrieben. Diese Kommunikation läuft über **stdio** zwischen zwei Prozessen auf demselben Rechner. Der Planungs-Agent ist daran nicht beteiligt.
 
 **Antwort 2 (gekürzt):**
 ```json
@@ -316,8 +316,8 @@ Sobald Agenten verschiedener Betreiber zusammenarbeiten, stellen sich drei Frage
 - Date: 11/2026
 - Version: v1.0
 
-![line](../images/banner.png)
+![line](images/banner.png)
 <p align="center">
-<a href="02_agent.md"><img src="../images/previous.png" width="150px"></a>
-<a href="04_wireshark.md"><img src="../images/next.png" width="150px"></a>
+<a href="07_a2a_agent.md"><img src="images/previous.png" width="150px"></a>
+<a href="09_a2a_wireshark.md"><img src="images/next.png" width="150px"></a>
 </p>

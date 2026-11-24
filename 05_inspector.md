@@ -381,4 +381,5 @@ Je nach Inspector-Version steht zusätzlich ein Abschnitt `_meta` mit `progressT
 ![line](images/banner.png)
 <p align="center">
 <a href="04_client_llm.md"><img src="images/previous.png" width="150px"></a>
+<a href="06_a2a_lab.md"><img src="images/next.png" width="150px"></a>
 </p>

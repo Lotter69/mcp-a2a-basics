@@ -1,9 +1,9 @@
 # Hinführung zu A2A (Agent2Agent-Protokoll)
 
-![line](../images/banner.png)
+![line](images/banner.png)
 
 ## Einführung
-In der Reihe [*MCP-Basics*](../mcp/01_lab.md) hat ein LLM über das Model Context Protocol ein **Werkzeug** benutzt: Der MCP-Client hat dem LLM das Tool `patchkabel_bestand_abfragen` angeboten, das LLM hat entschieden, es aufzurufen, und der MCP-Server hat die Funktion ausgeführt. Der aufrufende Agent bestimmt dabei, **was** passiert: welches Tool, mit welchen Parametern.
+In der Reihe [*MCP-Basics*](01_lab.md) hat ein LLM über das Model Context Protocol ein **Werkzeug** benutzt: Der MCP-Client hat dem LLM das Tool `patchkabel_bestand_abfragen` angeboten, das LLM hat entschieden, es aufzurufen, und der MCP-Server hat die Funktion ausgeführt. Der aufrufende Agent bestimmt dabei, **was** passiert: welches Tool, mit welchen Parametern.
 
 Sobald mehrere Agenten zusammenarbeiten, ändert sich die Frage. Ein Agent soll eine Aufgabe nicht selbst erledigen, sondern an einen **anderen Agenten** abgeben, der eigene Daten, eigene Werkzeuge und eigene Regeln hat und oft von jemand anderem betrieben wird. Der beauftragende Agent will dann nicht mehr bestimmen, *wie* die Aufgabe gelöst wird. Er will einen Auftrag erteilen, Rückfragen beantworten und am Ende ein Ergebnis bekommen.
 
@@ -36,7 +36,7 @@ Der vereinfachte Lagerbestand umfasst weiterhin blaue und rote Patchkabel mit ei
 ## Voraussetzungen
 
 - Python 3.11 oder höher
-- Abgeschlossener Teil 1 [*MCP-Basics*](../mcp/01_lab.md) (empfohlen, nicht zwingend)
+- Abgeschlossener Teil 1 [*MCP-Basics*](01_lab.md) (empfohlen, nicht zwingend)
 - Für Lab 03: Ollama 0.13.3 oder höher mit z. B. `qwen2.5-coder:3b` **oder** Anthropic API Key
 - Für die Laborübungen: Wireshark mit Npcap (Loopback), PowerShell, `curl.exe` (in Windows 10/11 enthalten)
 
@@ -61,11 +61,11 @@ cd C:\akademietag_2026\a2a_basics\a2a-demo
 
 > **Hinweis:** Auf den bereitgestellten Notebooks ist dieser Ordner bereits vorhanden und befüllt.
 
-Kopieren Sie die Dateien in den Ordner [siehe code in diesem Kapitel:](code/)
+Kopieren Sie die Dateien in den Ordner [siehe code in diesem Kapitel:](code_a2a/)
 
 | Datei | Rolle |
 |---|---|
-| `mcp_server.py` | MCP-Server mit dem Tool `patchkabel_bestand_abfragen` (unverändert aus [`mcp/code`](../mcp/code/)) |
+| `mcp_server.py` | MCP-Server mit dem Tool `patchkabel_bestand_abfragen` (unverändert aus [`code/`](code/), Teil 1) |
 | `lager_agent.py` | **A2A-Server**: der Lager-Agent (nutzt intern `mcp_server.py`) |
 | `a2a_verbindung.py` | Hilfsschicht für A2A-Clients (Discovery, Senden, Auswerten, Delegieren) |
 | `a2a_client.py` | **A2A-Client ohne LLM**: direkt mit dem Lager-Agenten sprechen |
@@ -115,7 +115,7 @@ notepad .env
 ANTHROPIC_API_KEY=sk-ant-api03-...
 ```
 
-Ollama prüfen Sie wie in [*MCP-Basics*, Schritt 3b](../mcp/01_lab.md) mit `ollama list` (Modell `qwen2.5-coder:3b` muss vorhanden sein).
+Ollama prüfen Sie wie in [*MCP-Basics*, Schritt 3b](01_lab.md) mit `ollama list` (Modell `qwen2.5-coder:3b` muss vorhanden sein).
 
 ---
 
@@ -293,7 +293,7 @@ python planungs_agent_ollama.py
    - Skill bestand_pruefen: Prüft, ob eine gewünschte Anzahl Patchkabel ...
 ```
 
-> **Vergleich mit MCP-Basics:** `planungs_agent_ollama.py` ist wie [`mcp_client_ollama.py`](../mcp/code/mcp_client_ollama.py) aufgebaut. Dort antwortete das LLM mit `{"tool": "patchkabel_bestand_abfragen", "farbe": "blau"}` und der Client rief ein **Tool** auf. Hier antwortet es mit `{"agent": "lager", "auftrag": "..."}` und der Client beauftragt einen **Agenten**. Statt `list_tools()` beim Start lädt der Client die **Agent Card**.
+> **Vergleich mit MCP-Basics:** `planungs_agent_ollama.py` ist wie [`mcp_client_ollama.py`](code/mcp_client_ollama.py) aufgebaut. Dort antwortete das LLM mit `{"tool": "patchkabel_bestand_abfragen", "farbe": "blau"}` und der Client rief ein **Tool** auf. Hier antwortet es mit `{"agent": "lager", "auftrag": "..."}` und der Client beauftragt einen **Agenten**. Statt `list_tools()` beim Start lädt der Client die **Agent Card**.
 
 ### Aufgabe 3.1: Planen und delegieren
 
@@ -367,8 +367,8 @@ Fehlt im Auftrag die Farbe, stellt der Lager-Agent eine Rückfrage. Der Planungs
 - Date: 11/2026
 - Version: v1.0 (a2a-sdk 1.3.1, A2A-Spezifikation 1.0, mcp 2.3.0)
 
-![line](../images/banner.png)
+![line](images/banner.png)
 <p align="center">
-<a href="../mcp/05_inspector.md"><img src="../images/previous.png" width="150px"></a>
-<a href="02_agent.md"><img src="../images/next.png" width="150px"></a>
+<a href="05_inspector.md"><img src="images/previous.png" width="150px"></a>
+<a href="07_a2a_agent.md"><img src="images/next.png" width="150px"></a>
 </p>

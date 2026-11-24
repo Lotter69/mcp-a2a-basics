@@ -1,10 +1,10 @@
 # Sachwissen - Bausteine eines A2A-Agenten
 
-![line](../images/banner.png)
+![line](images/banner.png)
 
 ## Grundaufbau des Lager-Agenten
 
-In [*MCP-Basics*](../mcp/02_tool.md) bestand ein Tool aus drei Komponenten: Tool-Beschreibung, Beispiel-Argumente und Tool-Funktion. Ein A2A-Agent ist ähnlich aufgebaut, nur eine Ebene höher:
+In [*MCP-Basics*](02_tool.md) bestand ein Tool aus drei Komponenten: Tool-Beschreibung, Beispiel-Argumente und Tool-Funktion. Ein A2A-Agent ist ähnlich aufgebaut, nur eine Ebene höher:
 
 | MCP-Server (Werkzeug) | A2A-Server (Agent) | Aufgabe |
 |---|---|---|
@@ -105,7 +105,7 @@ async def mcp_bestand_abfragen(farbe: str) -> str:
             return result.content[0].text
 ```
 
-**Beobachten Sie:** Der Lager-Agent ist hier **MCP-Client**. Er tut genau das, was in [*MCP-Basics*](../mcp/03_architecture.md) `mcp_client_ollama.py` getan hat: Server starten, `initialize`, `tools/call`. Der `mcp_server.py` ist unverändert.
+**Beobachten Sie:** Der Lager-Agent ist hier **MCP-Client**. Er tut genau das, was in [*MCP-Basics*](03_architecture.md) `mcp_client_ollama.py` getan hat: Server starten, `initialize`, `tools/call`. Der `mcp_server.py` ist unverändert.
 
 Der entscheidende Unterschied: Diese Funktion ist **privat**. Sie steht in keiner Agent Card, und der Planungs-Agent erfährt nicht, dass es sie gibt. Der Lager-Agent könnte sie morgen durch eine Datenbankabfrage ersetzen, ohne dass sich für seine Auftraggeber etwas ändert.
 
@@ -231,8 +231,8 @@ Was er intern benutzt (hier ein MCP-Tool), gehört **nicht** zur Schnittstelle.
 - Date: 11/2026
 - Version: v1.0
 
-![line](../images/banner.png)
+![line](images/banner.png)
 <p align="center">
-<a href="01_lab.md"><img src="../images/previous.png" width="150px"></a>
-<a href="03_architecture.md"><img src="../images/next.png" width="150px"></a>
+<a href="06_a2a_lab.md"><img src="images/previous.png" width="150px"></a>
+<a href="08_a2a_architecture.md"><img src="images/next.png" width="150px"></a>
 </p>

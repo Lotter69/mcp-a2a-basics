@@ -1,6 +1,6 @@
 # Laborübung 2: Das A2A-Protokoll von Hand (PowerShell)
 
-![line](../images/banner.png)
+![line](images/banner.png)
 
 ## Lernziele
 
@@ -12,7 +12,7 @@ Nach Abschluss dieser Laborübung können Sie:
 - Text-Parts und data-Parts gezielt einsetzen
 - Fehlermeldungen des Protokolls lesen und ihre Ursache zuordnen
 
-In [*MCP-Basics*](../mcp/05_inspector.md) hat der MCP Inspector die Rolle des Clients übernommen. Hier sind **Sie** der Client: Sie schreiben die Nachrichten, die sonst `a2a_client.py` erzeugt. So wird sichtbar, dass hinter A2A nur HTTP und JSON stecken.
+In [*MCP-Basics*](05_inspector.md) hat der MCP Inspector die Rolle des Clients übernommen. Hier sind **Sie** der Client: Sie schreiben die Nachrichten, die sonst `a2a_client.py` erzeugt. So wird sichtbar, dass hinter A2A nur HTTP und JSON stecken.
 
 ---
 
@@ -21,7 +21,7 @@ In [*MCP-Basics*](../mcp/05_inspector.md) hat der MCP Inspector die Rolle des Cl
 ### Software
 - PowerShell (Windows PowerShell 5.1 oder PowerShell 7)
 - `curl.exe` (in Windows 10/11 enthalten)
-- Projektordner mit dem Unterordner `anfragen\` [siehe Hinführung zu A2A](01_lab.md)
+- Projektordner mit dem Unterordner `anfragen\` [siehe Hinführung zu A2A](06_a2a_lab.md)
 
 ### Vorbereitung
 
@@ -366,7 +366,7 @@ Für A2A gibt es ein Gegenstück zum MCP Inspector: den **A2A Inspector** (https
 - Date: 11/2026
 - Version: v1.0
 
-![line](../images/banner.png)
+![line](images/banner.png)
 <p align="center">
-<a href="04_wireshark.md"><img src="../images/previous.png" width="150px"></a>
+<a href="09_a2a_wireshark.md"><img src="images/previous.png" width="150px"></a>
 </p>
