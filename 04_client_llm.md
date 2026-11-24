@@ -20,7 +20,7 @@ Nach Abschluss dieser Laborübung können Sie:
 - Wireshark installiert
 - Ollama läuft
 - Modell z. B. `qwen2.5-coder:3b` heruntergeladen
-- Python Virtual Environment mit `ollama` und `mcp` Bibliotheken [siehe Hinführung zu MCP, Schritt 2, 1b](01_lab.md)
+- Python Virtual Environment mit `ollama` und `mcp` Bibliotheken [siehe Hinführung zu MCP, Schritte 2 bis 5](01_lab.md)
 - `mcp_client_ollama.py` und `mcp_server.py` im Projektordner
 
 ### Vorbereitung
@@ -122,10 +122,12 @@ python mcp_client_ollama.py
 
 **Warten auf Prompt:**
 ```
-Ollama MCP Patchkabel-Lagerbestand Client gestartet
+Ollama MCP Netzwerklabor Client gestartet
 Modell: qwen2.5-coder:3b
-1 Tool verfügbar:
+3 Tools verfügbar:
    - patchkabel_bestand_abfragen: Fragt den aktuellen Lagerbestand...
+   - patchkabel_katalog_abfragen: Fragt im Katalog des Lieferanten Preis und Lieferzeit ...
+   - laborraum_belegung_abfragen: Prüft, ob ein Laborraum (104 oder 105) ...
 
 ============================================================
 
@@ -201,7 +203,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "system",
-      "content": "Du bist ein hilfreicher Assistent mit Zugriff auf Tools..."
+      "content": "Du bist ein hilfreicher Assistent mit Zugriff auf Tools. \n\nVerfügbare Tools:\n- patchkabel_bestand_abfragen: ...\n  Parameter: farbe (string) - \"blau\", \"rot\", \"gesamt\"\n- patchkabel_katalog_abfragen: ...\n- laborraum_belegung_abfragen: ...\n..."
     },
     {
       "role": "user",
@@ -210,6 +212,8 @@ Content-Type: application/json
   ]
 }
 ```
+
+> **Beobachtung:** Der System-Prompt enthält die **Liste aller drei Tools** mit Beschreibung und erlaubten Parameterwerten. Der Client baut diese Liste beim Start aus der Antwort auf `tools/list` (Funktion `system_prompt_erstellen()` in `mcp_client_ollama.py`). Kommt ein Tool im Server hinzu, steht es automatisch im Prompt.
 
 **HTTP Response:**
 ```json
@@ -277,11 +281,13 @@ Content-Type: application/json
 
 - Kann das LLM die Python-Implementierung des Tools sehen?
 
-- Woher weiß das LLM, welche Parameter das Tool benötigt?
+- Woher weiß das LLM, welche Tools es gibt und welche Parameter sie benötigen?
+
+- Woran erkennt das LLM, ob es den Bestand oder den Katalog abfragen soll?
 
 - Warum sehen wir die MCP-Kommunikation nicht in Wireshark?
 
-- Was wäre der Unterschied, wenn wir Claude API statt Ollama nutzen würden?
+- Was wäre der Unterschied, wenn wir eine Cloud-API (z. B. eines kommerziellen Anbieters) statt Ollama nutzen würden? (Tipp: Wohin gingen die Pakete, wären sie im Klartext lesbar?)
 
 ---
 
@@ -299,13 +305,20 @@ Content-Type: application/json
    ```
    → Beobachten Sie, wie das LLM mit dem Ergebnis rechnet
 
-3. **Frage ohne Tool:**
+3. **Tool-Auswahl beobachten:**
+   ```
+   Was kostet ein schwarzes Patchkabel beim Lieferanten?
+   Ist Raum 104 am Montag frei?
+   ```
+   → Vergleichen Sie im Response-JSON, welches Tool das LLM wählt und welche Parameter es setzt (bei der Raumfrage zwei Parameter: `raum` und `tag`)
+
+4. **Frage ohne Tool:**
    ```
    Was ist ein Patchkabel?
    ```
    → Sehen Sie, ob ein Tool-Call gemacht wird (sollte nicht!)
 
-4. **Dialog ohne MCP mitschneiden:**
+5. **Dialog ohne MCP mitschneiden:**
    Starten Sie `python einfacher_api_call_ollama.py` und stellen Sie drei aufeinander aufbauende Fragen.
    → Beobachten Sie, wie die POST-Anfragen an `/api/chat` mit jeder Frage länger werden: Der Client schickt jedes Mal den gesamten Verlauf mit.
 
@@ -317,8 +330,8 @@ Content-Type: application/json
 
 ## Autoren und Urheberrecht
 - Created by: Michael Lotter
-- Date: 12/2025, aktualisiert 11/2026 (Windows-Befehle, Dialog-Experiment)
-- Version: v1.1
+- Date: 12/2025, aktualisiert 11/2026 (Windows-Befehle, Dialog-Experiment, drei Tools)
+- Version: v1.2
 
 ![line](images/banner.png)
 <p align="center">

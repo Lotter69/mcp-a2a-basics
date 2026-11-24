@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "SendMessage",
+  "params": {
+    "message": {
+      "role": "ROLE_USER",
+      "messageId": "msg-005",
+      "parts": [
+        { "text": "Bestelle 50 gelbe Patchkabel" }
+      ]
+    }
+  }
+}

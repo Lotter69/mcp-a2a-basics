@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MCP Server für Patchkabel-Lagerbestand
-Stellt 1 Tool bereit: Bestand abfragen
+MCP Server für das Netzwerklabor
+Stellt 3 Tools bereit: Lagerbestand abfragen, Lieferantenkatalog abfragen, Raumbelegung abfragen
 Benötigt: mcp 2.x (siehe requirements.txt)
 """
 import asyncio
@@ -15,9 +15,24 @@ LAGER_BESTAND = {
     "rot_1m": 32
 }
 
+# Hardcodierter Lieferantenkatalog (Preis pro Stück in Euro, Lieferzeit in Werktagen)
+LIEFERANTEN_KATALOG = {
+    "blau":    {"preis": 1.50, "lieferzeit": 3},
+    "rot":     {"preis": 1.50, "lieferzeit": 3},
+    "gelb":    {"preis": 1.80, "lieferzeit": 5},
+    "gruen":   {"preis": 1.80, "lieferzeit": 5},
+    "schwarz": {"preis": 1.60, "lieferzeit": 4},
+}
+
+# Hardcodierte Belegung der Laborräume (Raum -> Wochentag -> belegt durch)
+RAUM_BELEGUNG = {
+    "104": {"montag": "Klasse IT11", "donnerstag": "Klasse 10b"},
+    "105": {"dienstag": "Klasse 11a"},
+}
+
 
 # =============================================================================
-# TOOL: PATCHKABEL BESTAND ABFRAGEN
+# TOOL 1: PATCHKABEL BESTAND ABFRAGEN
 # =============================================================================
 
 # MCP Tool-Beschreibung
@@ -74,6 +89,76 @@ def patchkabel_bestand_abfragen(farbe: str) -> str:
 
 
 # =============================================================================
+# TOOL 2: LIEFERANTENKATALOG ABFRAGEN
+# =============================================================================
+
+TOOL_KATALOG = Tool(
+    name="patchkabel_katalog_abfragen",
+    description="Fragt im Katalog des Lieferanten Preis und Lieferzeit für 1m Patchkabel einer Farbe ab. Für Nachbestellungen. Liefert KEINEN Lagerbestand.",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "farbe": {
+                "type": "string",
+                "description": "Die Farbe des Patchkabels",
+                "enum": ["blau", "rot", "gelb", "gruen", "schwarz"]
+            }
+        },
+        "required": ["farbe"]
+    }
+)
+
+# Beispiel-Argumente:
+# {"farbe": "gelb"}
+
+def patchkabel_katalog_abfragen(farbe: str) -> str:
+    """Tool-Funktion: Preis und Lieferzeit beim Lieferanten"""
+    eintrag = LIEFERANTEN_KATALOG.get(farbe)
+    if eintrag is None:
+        return f"Farbe {farbe} ist nicht im Katalog des Lieferanten"
+    return (f"Katalog 1m Patchkabel {farbe}: "
+            f"{eintrag['preis']:.2f} Euro pro Stück, Lieferzeit {eintrag['lieferzeit']} Werktage")
+
+
+# =============================================================================
+# TOOL 3: RAUMBELEGUNG ABFRAGEN
+# =============================================================================
+
+TOOL_RAUM = Tool(
+    name="laborraum_belegung_abfragen",
+    description="Prüft, ob ein Laborraum (104 oder 105) an einem Wochentag belegt oder frei ist.",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "raum": {
+                "type": "string",
+                "description": "Die Raumnummer des Laborraums",
+                "enum": ["104", "105"]
+            },
+            "tag": {
+                "type": "string",
+                "description": "Der Wochentag",
+                "enum": ["montag", "dienstag", "mittwoch", "donnerstag", "freitag"]
+            }
+        },
+        "required": ["raum", "tag"]
+    }
+)
+
+# Beispiel-Argumente:
+# {"raum": "104", "tag": "donnerstag"}
+
+def laborraum_belegung_abfragen(raum: str, tag: str) -> str:
+    """Tool-Funktion: Belegung eines Laborraums an einem Wochentag"""
+    if raum not in RAUM_BELEGUNG:
+        return f"Unbekannter Raum: {raum}"
+    belegt_durch = RAUM_BELEGUNG[raum].get(tag)
+    if belegt_durch:
+        return f"Raum {raum} ist am {tag.capitalize()} belegt ({belegt_durch})"
+    return f"Raum {raum} ist am {tag.capitalize()} frei"
+
+
+# =============================================================================
 # MCP SERVER SETUP
 # =============================================================================
 
@@ -82,7 +167,7 @@ async def list_tools(ctx, params) -> ListToolsResult:
     Gibt die Liste aller verfügbaren Tools zurück.
     Diese Funktion wird vom MCP Client aufgerufen (tools/list).
     """
-    return ListToolsResult(tools=[TOOL_DESCRIPTION])
+    return ListToolsResult(tools=[TOOL_DESCRIPTION, TOOL_KATALOG, TOOL_RAUM])
 
 
 async def call_tool(ctx, params) -> CallToolResult:
@@ -103,6 +188,19 @@ async def call_tool(ctx, params) -> CallToolResult:
     if name == "patchkabel_bestand_abfragen":
         result = patchkabel_bestand_abfragen(
             farbe=arguments["farbe"]
+        )
+        return CallToolResult(content=[TextContent(type="text", text=result)])
+
+    elif name == "patchkabel_katalog_abfragen":
+        result = patchkabel_katalog_abfragen(
+            farbe=arguments["farbe"]
+        )
+        return CallToolResult(content=[TextContent(type="text", text=result)])
+
+    elif name == "laborraum_belegung_abfragen":
+        result = laborraum_belegung_abfragen(
+            raum=arguments["raum"],
+            tag=arguments["tag"]
         )
         return CallToolResult(content=[TextContent(type="text", text=result)])
 

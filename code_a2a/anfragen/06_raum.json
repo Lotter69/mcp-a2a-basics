@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "SendMessage",
+  "params": {
+    "message": {
+      "role": "ROLE_USER",
+      "messageId": "msg-006",
+      "parts": [
+        { "text": "Reserviere Raum 104 für Donnerstag" }
+      ]
+    }
+  }
+}

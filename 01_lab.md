@@ -19,11 +19,20 @@ Eine weitere Methode der Kontextualisieung bietet das Model Context Protocol, we
 Zur Vorbereitung eines Netzwerktechnikkurses möchten Sie sicherstellen, dass ausreichend Patchkabel im Labor vorhanden sind. Bei der Erfassung des aktuellen Lagerbestands möchten Sie ein LLM unterstütztes IT-System verwenden.
 Der vereinfachte Lagerbestand umfasst blaue und rote Patchkabel mit einer Länge von jeweils 1 m.
 
+Das IT-System kennt drei Werkzeuge (MCP-Tools) und muss je nach Frage das passende auswählen:
+
+| Tool | Liefert |
+|---|---|
+| `patchkabel_bestand_abfragen` | Lagerbestand blauer und roter Patchkabel (oder gesamt) |
+| `patchkabel_katalog_abfragen` | Preis und Lieferzeit beim Lieferanten (für Nachbestellungen), KEIN Lagerbestand |
+| `laborraum_belegung_abfragen` | ob Laborraum 104 oder 105 an einem Wochentag belegt oder frei ist |
+
 ## Voraussetzungen
 
 - Python 3.11 oder höher
-- Anthropic API Key, Modell z. B. sonnet 4
-- Alternativer API-Provider - Ollama 0.13.3, Modell z. B. qwen2.5-coder:3b
+- Ollama 0.13.3 (lokaler API-Provider), Modell qwen2.5-coder:3b
+
+> **Hinweis:** Das gesamte Material arbeitet lokal mit Ollama. Es wird kein API-Schlüssel und kein Cloud-Konto benötigt, es entstehen keine Kosten.
 
 ## Vorbereitende Aufgaben
 
@@ -44,16 +53,9 @@ python --version
 
 ---
 
-### Schritt 2: Projektordner erstellen (je API-Provider)
+### Schritt 2: Projektordner erstellen
 
-1a. Erstellen Sie einen neuen Ordner für das Projekt (Anthropic):
-
-```cmd
-mkdir C:\MCP-Demo_Antropic
-cd C:\MCP-Demo_Antropic
-```
-
-1b. Erstellen Sie einen neuen Ordner für das Projekt (Ollama):
+1. Erstellen Sie einen neuen Ordner für das Projekt:
 
 ```cmd
 mkdir C:\akademietag_2026\mcp_basics\mcp-demo_ollama
@@ -62,33 +64,20 @@ cd C:\akademietag_2026\mcp_basics\mcp-demo_ollama
 
 > **Hinweis:** Auf den bereitgestellten Notebooks ist dieser Ordner bereits vorhanden und befüllt.
 
-2. Kopieren Sie die Dateien in den entsprechenden lokalen Ordner [siehe code in diesem Kapitel:](code/)
+2. Kopieren Sie die Dateien in den lokalen Ordner [siehe code in diesem Kapitel:](code/)
 
-   | Anthropic (5 Dateien) | Ollama (4 Dateien) |
+   | Datei | Aufgabe |
    |---|---|
-   | `einfacher_api_call.py` | `einfacher_api_call_ollama.py` |
-   | `mcp_client.py` | `mcp_client_ollama.py` |
-   | `mcp_server.py` | `mcp_server.py` |
-   | `requirements.txt` | `requirements.txt` |
-   | `.env.example` | – |
+   | `einfacher_api_call_ollama.py` | Lab 01: Chat mit dem LLM ohne MCP |
+   | `mcp_client_ollama.py` | Lab 02: Client mit LLM, nutzt die MCP-Tools |
+   | `mcp_server.py` | MCP-Server mit drei Tools |
+   | `requirements.txt` | benötigte Bibliotheken (`mcp` 2.x, `ollama`) |
 
-> **Wichtig:** Die Dateien eines Ordners gehören zusammen. Der Server ist für die Bibliothek `mcp` ab Version 2 geschrieben, die `requirements.txt` legt diese Version fest. Werden alte und neue Dateien gemischt, bricht der Server beim Start ab (der Client meldet dann `unhandled errors in a TaskGroup`).
-
----
-
-### Schritt 3a: API-Schlüssel bei einem API-Provider besorgen (hier am Beispiel Anthrophic)
-
-1. Besuchen Sie https://console.anthropic.com/
-2. Melden Sie sich an oder erstellen Sie ein Konto
-3. Navigieren Sie zu **API Keys**
-4. Klicken Sie auf **Create Key**
-5. Kopieren Sie den API-Schlüssel (er beginnt mit `sk-ant-...`)
-
-> **Wichtig:** Claude-API wird als seperates Produkt angeboten. Es enstehen daher Kosten. 
-> Bewahren Sie Ihren API-Schlüssel sicher auf!
+> **Wichtig:** Die Dateien gehören zusammen. Der Server ist für die Bibliothek `mcp` ab Version 2 geschrieben, die `requirements.txt` legt diese Version fest. Werden alte und neue Dateien gemischt, bricht der Server beim Start ab (der Client meldet dann `unhandled errors in a TaskGroup`).
 
 ---
-### Alternativer Schritt 3b: Inbetriebnahme eines lokalen API-Providers mit Modell
+
+### Schritt 3: Ollama und Modell prüfen
 #### Ollama Version prüfen
 
 ```cmd
@@ -142,28 +131,7 @@ Beenden Sie den Test mit `/bye`
 
 
 
-### Schritt 4: .env Datei erstellen (mit Ollama nicht erforlderlich)
-
-1. Öffnen Sie den Editor (z.B. Notepad):
-
-```cmd
-notepad .env
-```
-
-2. Fügen Sie folgende Zeile ein (ersetzen Sie `your-api-key-here` mit Ihrem echten API-Schlüssel):
-
-```
-ANTHROPIC_API_KEY=sk-ant-api03-...
-```
-
-3. Speichern Sie die Datei als `.env` (wichtig: ohne `.txt` Endung!)
-
->**Tipp:** In Windows Explorer müssen Sie möglicherweise "Dateinamenerweiterungen" aktivieren,
-> um sicherzustellen, dass die Datei als `.env` und nicht als `.env.txt` gespeichert wird.
-
----
-
-### Schritt 5: Virtuelle Umgebung erstellen (je API-Provider, also eine für Antropic und eine für Ollama)
+### Schritt 4: Virtuelle Umgebung erstellen
 
 1. Erstellen Sie eine virtuelle Umgebung:
 
@@ -191,7 +159,7 @@ python -m venv venv
 ```
 ---
 
-### Schritt 6: Bibliotheken installieren
+### Schritt 5: Bibliotheken installieren
 
 1. Installieren Sie alle benötigten Bibliotheken:
 
@@ -201,7 +169,7 @@ pip install -r requirements.txt
 
 **Erwartete Ausgabe:**
 ```
-Successfully installed anthropic-... mcp-... python-dotenv-...
+Successfully installed ... mcp-2.x ... ollama-0.6.x ...
 ```
 
 2. Überprüfen Sie die Installation:
@@ -210,13 +178,7 @@ Successfully installed anthropic-... mcp-... python-dotenv-...
 pip list
 ```
 
-Mit Anthropic sollten Sie sehen:
-- `anthropic`
-- `mcp`
-- `python-dotenv`
-
-
-Mit Ollama sollten Sie sehen:
+Sie sollten unter anderem sehen:
 - `ollama`
 - `mcp` in Version **2.x**
 
@@ -226,7 +188,7 @@ Mit Ollama sollten Sie sehen:
 
 # Lab 01: Einfacher API-Call an ein LLM (ohne MCP)
 
-**Hinweis** Je nach API-Provider lokal mit Ollama und einem lokalen Modell oder entfernt mit z. B. Anthropic als Provider und einem verfügbaren Sprachmodell z. B. Claude Sonnet
+**Hinweis:** Das Sprachmodell läuft lokal in Ollama (qwen2.5-coder:3b).
 
 Testen Sie zunächst die einfache Anfrage an ein LLM
 - Rufen Sie das Skript "einfacher_api_call_ollama.py" auf
@@ -253,19 +215,45 @@ Ein MCP (Model Context Protocol) System zur Abfrage des Patchkabel-Lagerbestands
 python mcp_client_ollama.py
 ```
 
-(Mit Anthropic: `python mcp_client.py`)
-
 **Erwartete Ausgabe:**
 ```
-Ollama MCP Patchkabel-Lagerbestand Client gestartet
+Ollama MCP Netzwerklabor Client gestartet
 Modell: qwen2.5-coder:3b
-1 Tool verfügbar:
+3 Tools verfügbar:
    - patchkabel_bestand_abfragen: Fragt den aktuellen Lagerbestand von Patchkabeln ab...
+   - patchkabel_katalog_abfragen: Fragt im Katalog des Lieferanten Preis und Lieferzeit ...
+   - laborraum_belegung_abfragen: Prüft, ob ein Laborraum (104 oder 105) an einem Wochentag belegt oder frei ist.
 
 ============================================================
 
 Ihre Anfrage (oder 'exit' zum Beenden):
 ```
+
+Stellen Sie Fragen, für die das LLM jeweils ein **anderes** Tool wählen muss, und achten Sie auf die Zeilen `Führe Tool aus:` und `Parameter:`:
+
+| Testfrage | Erwartetes Tool | Erwartete Parameter |
+|---|---|---|
+| Wie viele rote Patchkabel haben wir? | `patchkabel_bestand_abfragen` | `{'farbe': 'rot'}` |
+| Wie teuer ist eine Nachbestellung grüner Kabel und wie lange dauert die Lieferung? | `patchkabel_katalog_abfragen` | `{'farbe': 'gruen'}` |
+| Ist Laborraum 105 am Dienstag belegt? | `laborraum_belegung_abfragen` | `{'raum': '105', 'tag': 'dienstag'}` |
+| Was ist ein Patchkabel? | keines | – (das LLM antwortet selbst) |
+
+**Beispiel:**
+```
+Ihre Anfrage (oder 'exit' zum Beenden): Was kostet ein gelbes Patchkabel beim Lieferanten?
+
+Verarbeite Anfrage...
+Führe Tool aus: patchkabel_katalog_abfragen
+   Parameter: {'farbe': 'gelb'}
+   Ergebnis: Katalog 1m Patchkabel gelb: 1.80 Euro pro Stück, Lieferzeit 5 Werktage
+
+Antwort:
+   ...
+```
+
+> **Hinweis:** Die Testfragen weichen absichtlich von den Beispielen im System-Prompt des Clients ab, damit das LLM wirklich auswählen muss und nicht nur ein Beispiel wiedererkennt.
+
+> **Beobachtung:** Das LLM sieht nur Name, Beschreibung und Parameter der Tools. Ob es das richtige Tool wählt, hängt stark von diesen Beschreibungen ab. Ein kleines Modell wie qwen2.5-coder:3b kann dabei Bestand und Katalog verwechseln. Probieren Sie Formulierungen aus, bei denen die Wahl eindeutig bzw. mehrdeutig ist (z. B. „Haben wir gelbe Kabel?“).
 
 > **Tipp zur Fehlerbehebung:** Meldet der Client `unhandled errors in a TaskGroup`, ist der MCP-Server beim Start abgebrochen. Der Client zeigt darunter die Ursache an. Starten Sie den Server zur Kontrolle einzeln mit `python mcp_server.py`: Läuft er ohne Meldung, ist er in Ordnung (Beenden mit Strg+C). Häufigste Ursache ist eine alte `mcp_server.py` zusammen mit `mcp` 2.x.
 
@@ -285,13 +273,12 @@ Ihr Prompt sollte wieder normal aussehen (ohne `(venv)`).
 
 - Experimentieren Sie mit verschiedenen Fragen an das System
 - Erweitern Sie den Lagerbestand
-- Fügen Sie weitere MCP-Tools hinzu
+- Fügen Sie ein weiteres MCP-Tool hinzu (z. B. Bestand an Switches) und prüfen Sie, ob das LLM es auswählt
 
 ---
 
 ## Zusätzliche Ressourcen
 
-- **Anthropic API Dokumentation:** https://docs.anthropic.com/
 - **Model Context Protocol:** https://modelcontextprotocol.io/
 - **Python Virtual Environments:** https://docs.python.org/3/library/venv.html
 - **Ollama:** https://ollama.com/
@@ -299,8 +286,8 @@ Ihr Prompt sollte wieder normal aussehen (ohne `(venv)`).
 
 ## Autoren und Urheberrecht
 - Created by: Michael Lotter
-- Date: 12/2025, aktualisiert 11/2026 (mcp 2.x, Dialog im einfachen API-Call)
-- Version: v1.1
+- Date: 12/2025, aktualisiert 11/2026 (mcp 2.x, Dialog im einfachen API-Call, drei Tools, nur Ollama)
+- Version: v1.2
 
 ![line](images/banner.png)
 <p align="center">

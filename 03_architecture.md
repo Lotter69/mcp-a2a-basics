@@ -9,7 +9,7 @@
 sequenceDiagram
     participant U as Benutzer
     participant A as LLM (API-Provider)
-    participant C as Host (z.B. Claude Desktop mit MCP Client)
+    participant C as Host (hier mcp_client_ollama.py mit MCP Client)
     participant S as MCP Server
     participant T as Tool (Funktion)
     
@@ -19,7 +19,7 @@ sequenceDiagram
         C->>S: initialize()
         S-->>C: Server bereit
         C->>S: list_tools()
-        S-->>C: [patchkabel_bestand_abfragen]
+        S-->>C: [patchkabel_bestand_abfragen,<br/>patchkabel_katalog_abfragen,<br/>laborraum_belegung_abfragen]
     end
     
     rect rgb(255, 245, 230)
@@ -29,8 +29,8 @@ sequenceDiagram
     
     rect rgb(240, 255, 240)
         Note over U,T: 3️⃣ AI-MODELL ENTSCHEIDUNG
-        C->>A: messages: "Wie viele blaue Kabel..."<br/>tools: [patchkabel_bestand_abfragen]
-        Note over A: Analysiert Anfrage<br/>Entscheidet: Tool benötigt<br/>Wählt: patchkabel_bestand_abfragen
+        C->>A: messages: "Wie viele blaue Kabel..."<br/>tools: [3 Tools]
+        Note over A: Analysiert Anfrage<br/>Entscheidet: Tool benötigt<br/>Wählt aus 3 Tools:<br/>patchkabel_bestand_abfragen
         A-->>C: tool_use:<br/>name="patchkabel_bestand_abfragen"<br/>arguments={"farbe": "blau"}
     end
     
@@ -56,6 +56,8 @@ sequenceDiagram
     end
 ```
 
+> **Hinweis zu den JSON-Beispielen:** Die Beispiele für die Kommunikation Client ↔ LLM (`tool_use`, `stop_reason`, `tool_result`) zeigen das **native Tool-Calling** einer Provider-API (Format der Anthropic Messages API). So arbeiten Hosts wie Claude Desktop. Im Lab wird dagegen lokal **Ollama** genutzt: Dort stehen die Tools im System-Prompt und das LLM antwortet mit einem einfachen JSON wie `{"tool": "patchkabel_bestand_abfragen", "farbe": "blau"}` (siehe [Client mit LLM](04_client_llm.md)). Der Ablauf ist derselbe, nur das Format zwischen Client und LLM unterscheidet sich. Die MCP-Nachrichten zwischen Client und Server (`tools/list`, `tools/call`) sind in beiden Fällen identisch.
+
 ---
 
 ## Schritt-für-Schritt Erklärung
@@ -67,14 +69,14 @@ MCP Client ──initialize()──> MCP Server
 MCP Client <──OK──────────── MCP Server
 
 MCP Client ──list_tools()──> MCP Server
-MCP Client <──[Tools]──────── MCP Server
+MCP Client <──[3 Tools]────── MCP Server
 ```
 
 **Was passiert:**
 - Client startet Server-Prozess (via stdio)
 - Server initialisiert sich
 - Client fragt verfügbare Tools ab
-- Server sendet Tool-Liste zurück
+- Server sendet Tool-Liste zurück (hier drei Tools: Bestand, Katalog, Raumbelegung)
 
 ---
 
@@ -101,7 +103,7 @@ LLM ──tool_use─────────> MCP Client
 **Was passiert:**
 - Client sendet Anfrage und Tool-Liste an LLM
 - LLM analysiert die Frage
-- LLM entscheidet: "Ich brauche das Tool patchkabel_bestand_abfragen"
+- LLM entscheidet: "Ich brauche das Tool patchkabel_bestand_abfragen" (und nicht Katalog oder Raumbelegung)
 - LLM gibt Anweisung zurück: Tool ausführen mit Parameter "blau"
 
 **LLM JSON-Response:**
@@ -167,16 +169,16 @@ MCP Server ───Ergebnis───> MCP Client
 ### 5️⃣ Antwort-Generierung
 
 ```
-MCP Client ──Tool-Ergebnis──> Claude API
-Claude API ──Formuliert────> (intern)
-Claude API ──Antwort───────> MCP Client
+MCP Client ──Tool-Ergebnis──> LLM
+LLM ─────────Formuliert────> (intern)
+LLM ─────────Antwort───────> MCP Client
 ```
 
 **Was passiert:**
-- Client sendet Tool-Ergebnis zurück an Claude
-- Claude liest das Ergebnis
-- Claude formuliert natürliche Antwort basierend auf Daten
-- Claude sendet finale Antwort an Client
+- Client sendet Tool-Ergebnis zurück an das LLM
+- LLM liest das Ergebnis
+- LLM formuliert natürliche Antwort basierend auf Daten
+- LLM sendet finale Antwort an Client
 
 **LLM finale Response:**
 ```json
@@ -209,19 +211,21 @@ MCP Client ──Antwort──> Benutzer (Terminal/UI)
 
 ### Anfrage: "Wie viele blaue Kabel haben wir?"
 
+(Format zwischen Client und LLM: natives Tool-Calling einer Provider-API, siehe Hinweis oben)
+
 ```
 1. BENUTZER → CLIENT
    Input: "Wie viele blaue Kabel haben wir?"
 
 2. CLIENT → LLM
    Request: {
-     "model": "claude-sonnet-4-20250514",
+     "model": "...",
      "messages": [{"role": "user", "content": "Wie viele blaue Kabel haben wir?"}],
-     "tools": [{
-       "name": "patchkabel_bestand_abfragen",
-       "description": "Fragt den aktuellen Lagerbestand...",
-       "input_schema": {...}
-     }]
+     "tools": [
+       {"name": "patchkabel_bestand_abfragen", "description": "Fragt den aktuellen Lagerbestand...", "input_schema": {...}},
+       {"name": "patchkabel_katalog_abfragen", "description": "Fragt im Katalog des Lieferanten...", "input_schema": {...}},
+       {"name": "laborraum_belegung_abfragen", "description": "Prüft, ob ein Laborraum...", "input_schema": {...}}
+     ]
    }
 
 3. LLM → CLIENT
@@ -258,7 +262,7 @@ MCP Client ──Antwort──> Benutzer (Terminal/UI)
 
 8. CLIENT → LLM
    Request: {
-     "model": "claude-sonnet-4-20250514",
+     "model": "...",
      "messages": [
        {"role": "user", "content": "Wie viele blaue Kabel haben wir?"},
        {"role": "assistant", "content": [tool_use_block]},
@@ -304,7 +308,7 @@ MCP Client ──Antwort──> Benutzer (Terminal/UI)
 
 ### Wer übernimmt welche Aufgaben:
 
-- **LLM:** Welches Tool wird benötigt?
+- **LLM:** Welches der drei Tools wird benötigt, mit welchen Parametern?
 - **MCP Client:** Koordination zwischen LLM und Tools (anwendungsspezifische Funktionsaufrufe) (Gern verwendete Analogie: USB-Schnittstelle zwischen LLM und Anwendung)
 - **MCP Server:** Tool-Ausführung und in diesem Beispiel auch Datenmanagement
 - **Tool:** Funktionen (Daten abrufen, berechnen, API-Calls, Datenbankabfragen, etc.)
@@ -313,8 +317,8 @@ MCP Client ──Antwort──> Benutzer (Terminal/UI)
 
 ## Autoren und Urheberrecht
 - Created by: Michael Lotter
-- Date: 12/2025
-- Version: v1.0
+- Date: 12/2025, aktualisiert 11/2026 (drei Tools, Hinweis Ollama)
+- Version: v1.1
 
 ![line](images/banner.png)
 <p align="center">

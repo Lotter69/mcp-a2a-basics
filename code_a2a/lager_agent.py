@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 A2A-Server: Lager-Agent des Netzwerklabors
+Rolle: Fachagent (A2A-Server nach außen, MCP-Client nach innen, ohne LLM)
 
 Der Lager-Agent ist ein eigenständiger Agent mit eigener Aufgabe:
-Er beantwortet Anfragen zur Verfügbarkeit von Patchkabeln.
+Er beantwortet Anfragen zur Verfügbarkeit von Patchkabeln im Lager.
 
 - Nach AUSSEN spricht er A2A (Agent2Agent-Protokoll, JSON-RPC über HTTP, Port 9999).
 - Nach INNEN nutzt er sein Werkzeug über MCP: Er startet mcp_server.py und ruft
@@ -21,11 +22,6 @@ Start:      python lager_agent.py
 
 import asyncio
 import re
-import sys
-from pathlib import Path
-
-import uvicorn
-from starlette.applications import Starlette
 
 from a2a.helpers import (
     get_data_parts,
@@ -37,22 +33,17 @@ from a2a.helpers import (
 )
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
-from a2a.server.request_handlers import DefaultRequestHandler
-from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
-from a2a.server.tasks import InMemoryTaskStore, TaskUpdater
+from a2a.server.tasks import TaskUpdater
 from a2a.types import (
     AgentCapabilities,
     AgentCard,
     AgentInterface,
     AgentSkill,
-    Role,
 )
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from fachagent_hilfen import agent_starten, mcp_tool_aufrufen, nachrichten_des_auftrags
 
 HOST = "127.0.0.1"
-PORT = 9999
-MCP_SERVER = Path(__file__).with_name("mcp_server.py")
+PORT = 9999          # Lager 9999, Bestellung 9998, Raumbuchung 9997 (siehe agenten.json)
 
 
 # =============================================================================
@@ -65,7 +56,7 @@ SKILL_BESTAND = AgentSkill(
     name="Patchkabel-Bestand prüfen",
     description=(
         "Prüft, ob eine gewünschte Anzahl Patchkabel (1 m, blau oder rot) im Lager "
-        "vorhanden ist, und meldet Bestand und Fehlmenge."
+        "VORHANDEN ist, und meldet Bestand und Fehlmenge. Bestellt nichts."
     ),
     tags=["lager", "patchkabel", "netzwerklabor"],
     examples=[
@@ -96,21 +87,14 @@ AGENT_CARD = AgentCard(
 
 
 # =============================================================================
-# 2. WERKZEUG - das MCP-Tool aus MCP-Basics
-#    Der Lager-Agent ist hier MCP-Client (Agent <-> Tool).
+# 2. WERKZEUG - das MCP-Tool aus Teil 1 (MCP-Basics)
+#    Der Lager-Agent ist hier MCP-Client (Agent <-> Werkzeug).
+#    mcp_tool_aufrufen() steht in fachagent_hilfen.py und startet mcp_server.py über stdio.
 # =============================================================================
 
 async def mcp_bestand_abfragen(farbe: str) -> str:
-    """Startet mcp_server.py über stdio und ruft das Tool patchkabel_bestand_abfragen auf."""
-    params = StdioServerParameters(command=sys.executable, args=[str(MCP_SERVER)])
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            print(f"   [MCP]  tools/call patchkabel_bestand_abfragen {{'farbe': '{farbe}'}}")
-            result = await session.call_tool("patchkabel_bestand_abfragen", {"farbe": farbe})
-            text = result.content[0].text
-            print(f"   [MCP]  Ergebnis: {text.splitlines()[0]} ...")
-            return text
+    """Ruft das Tool patchkabel_bestand_abfragen des MCP-Servers auf."""
+    return await mcp_tool_aufrufen("patchkabel_bestand_abfragen", {"farbe": farbe})
 
 
 def zahl_aus_tool_text(text: str, farbe: str) -> int:
@@ -184,14 +168,13 @@ class LagerAgentExecutor(AgentExecutor):
         updater = TaskUpdater(event_queue, task.id, task.context_id)
 
         # Alle Nachrichten des Auftraggebers dieser Aufgabe (Verlauf + neue Nachricht)
-        nachrichten = [m for m in task.history if m.role == Role.ROLE_USER]
-        if context.message.message_id not in [m.message_id for m in nachrichten]:
-            nachrichten.append(context.message)
+        nachrichten = nachrichten_des_auftrags(context, task)
         print(f"   Nachricht: {' '.join(get_text_parts(context.message.parts)) or get_data_parts(context.message.parts)}")
 
         # --- 3.2 Zustand WORKING melden ----------------------------------------
         await updater.start_work(new_text_message("Lager-Agent prüft die Anfrage ...",
                                                   task_id=task.id, context_id=task.context_id))
+        print("   -> In Arbeit (Zustand: WORKING)")
         await asyncio.sleep(1)  # nur zur Veranschaulichung: Zwischenstand bleibt kurz sichtbar
 
         auftrag = auftrag_verstehen(nachrichten)
@@ -251,24 +234,8 @@ class LagerAgentExecutor(AgentExecutor):
 
 
 # =============================================================================
-# 4. SERVER-SETUP - HTTP-Server mit den A2A-Routen
+# 4. SERVER-SETUP - HTTP-Server mit den A2A-Routen (siehe fachagent_hilfen.py)
 # =============================================================================
 
-def app_erstellen() -> Starlette:
-    request_handler = DefaultRequestHandler(
-        agent_executor=LagerAgentExecutor(),     # unsere Agent-Logik
-        task_store=InMemoryTaskStore(),          # merkt sich alle Tasks (nur im Arbeitsspeicher)
-        agent_card=AGENT_CARD,
-    )
-    routes = []
-    routes.extend(create_agent_card_routes(AGENT_CARD))         # GET  /.well-known/agent-card.json
-    routes.extend(create_jsonrpc_routes(request_handler, "/"))  # POST /  (JSON-RPC: SendMessage, GetTask, ...)
-    return Starlette(routes=routes)
-
-
 if __name__ == "__main__":
-    print("Lager-Agent Netzwerklabor (A2A-Server)")
-    print(f"Agent Card: http://{HOST}:{PORT}/.well-known/agent-card.json")
-    print(f"JSON-RPC:   http://{HOST}:{PORT}/")
-    print("Beenden mit Strg+C\n")
-    uvicorn.run(app_erstellen(), host=HOST, port=PORT, log_level="warning")
+    agent_starten(AGENT_CARD, LagerAgentExecutor(), HOST, PORT)

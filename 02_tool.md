@@ -5,6 +5,16 @@
 
 ## Grundaufbau des verwendeten MCP-Servers
 
+Der Server `mcp_server.py` stellt **drei Tools** bereit. Das LLM muss also bei jeder Frage entscheiden, welches Tool passt:
+
+| Tool | Parameter | Ergebnis (Beispiel) |
+|---|---|---|
+| `patchkabel_bestand_abfragen` | `farbe`: blau, rot, gesamt | `Bestand blaue 1m Patchkabel: 45 Stück` |
+| `patchkabel_katalog_abfragen` | `farbe`: blau, rot, gelb, gruen, schwarz | `Katalog 1m Patchkabel gelb: 1.80 Euro pro Stück, Lieferzeit 5 Werktage` |
+| `laborraum_belegung_abfragen` | `raum`: 104, 105 und `tag`: montag … freitag | `Raum 104 ist am Donnerstag belegt (Klasse 10b)` |
+
+Alle drei sind nach demselben Muster gebaut. Teil A zeigt es ausführlich am ersten Tool.
+
 Jedes MCP Tool besteht aus drei Komponenten:
 
 1. **MCP Tool-Beschreibung** - Definiert das Tool für den Client (MCP-Standard und funktional)
@@ -114,6 +124,42 @@ def patchkabel_bestand_abfragen(farbe: str) -> str:
 - **Verschiedene Modi**: Unterstützt einzelne Farben und Gesamtansicht
 - **Fehlerbehandlung**: `else` für ungültige Eingaben, obwohl MCP-inputSchema bereits ungültige Eingaben verhindert.
 
+### 4. Die beiden weiteren Tools (gleiches Muster)
+
+```python
+TOOL_KATALOG = Tool(
+    name="patchkabel_katalog_abfragen",
+    description="Fragt im Katalog des Lieferanten Preis und Lieferzeit für 1m Patchkabel einer Farbe ab. "
+                "Für Nachbestellungen. Liefert KEINEN Lagerbestand.",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "farbe": {"type": "string", "description": "Die Farbe des Patchkabels",
+                      "enum": ["blau", "rot", "gelb", "gruen", "schwarz"]}
+        },
+        "required": ["farbe"]
+    }
+)
+
+TOOL_RAUM = Tool(
+    name="laborraum_belegung_abfragen",
+    description="Prüft, ob ein Laborraum (104 oder 105) an einem Wochentag belegt oder frei ist.",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "raum": {"type": "string", "description": "Die Raumnummer des Laborraums", "enum": ["104", "105"]},
+            "tag":  {"type": "string", "description": "Der Wochentag",
+                     "enum": ["montag", "dienstag", "mittwoch", "donnerstag", "freitag"]}
+        },
+        "required": ["raum", "tag"]     # zwei Pflichtparameter
+    }
+)
+```
+
+Die Daten stehen wie der Lagerbestand fest im Code (`LIEFERANTEN_KATALOG`, `RAUM_BELEGUNG`).
+
+> **Beobachtung:** Bestand und Katalog haben denselben Parameter `farbe`. Das LLM kann sie nur über `name` und `description` unterscheiden. Deshalb steht in der Katalog-Beschreibung ausdrücklich „Liefert KEINEN Lagerbestand“. Gute Tool-Beschreibungen grenzen Tools voneinander ab.
+
 ## Teil B - Das MCP-Server-Setup
 
 > **Hinweis:** Der Server ist für die Python-Bibliothek **`mcp` ab Version 2** geschrieben (siehe `requirements.txt`). In älteren Versionen (1.x) wurden die Handler mit Dekoratoren (`@server.list_tools()`, `@server.call_tool()`) registriert. Diese Schreibweise gibt es in Version 2 nicht mehr.
@@ -139,12 +185,14 @@ async def list_tools(ctx, params) -> ListToolsResult:   # Diese Funktion ist asy
                                                         # ctx:    Kontext der Anfrage (wird hier nicht benötigt)
                                                         # params: Parameter der Anfrage (wird hier nicht benötigt)
     """Gibt alle verfügbaren Tools zurück"""
-    return ListToolsResult(tools=[TOOL_DESCRIPTION])    # Hier ein Element der Liste, es können auch mehrere Tools sein
+    return ListToolsResult(tools=[TOOL_DESCRIPTION, TOOL_KATALOG, TOOL_RAUM])   # Liste mit drei Tools
     # Ablauf
     # 1. Das Ergebnis wird vom MCP-Server als JSON serialisiert
     # 2. Es wird über STDIO (Standard Input/Output) an den Client gesendet
-    # 3. Client empfängt: {"tools": [{"name": "patchkabel_bestand_abfragen", ...}]}
-    # 4. Client zeigt dem LLM: "Du kannst dieses Tool nutzen: ..."
+    # 3. Client empfängt: {"tools": [{"name": "patchkabel_bestand_abfragen", ...},
+    #                                {"name": "patchkabel_katalog_abfragen", ...},
+    #                                {"name": "laborraum_belegung_abfragen", ...}]}
+    # 4. Client zeigt dem LLM: "Du kannst diese Tools nutzen: ..."
 ```
 
 Diese Funktion wird vom Client aufgerufen, um zu erfahren, welche Tools auf dem Server zur Verfügung gestellt werden.
@@ -184,17 +232,23 @@ async def call_tool(ctx, params) -> CallToolResult:
 
 **Wichtige Ergänzungen:**
 1. Das Ergebnis ist ein `CallToolResult`. Darin steht unter `content` eine Liste von Inhalten, hier ein `TextContent`.
-2. Bei mehreren Tools wären Bedingungen if/elif/else enthalten:
+2. Bei mehreren Tools enthält `call_tool()` eine Bedingung if/elif/else. So sieht das im Server mit drei Tools aus:
 
 ```python
-if name == "tool1":
-    ...
-elif name == "tool2":
-    ...
-elif name == "tool3":
-    ...
-else:
-    raise ValueError(...)
+    if name == "patchkabel_bestand_abfragen":
+        result = patchkabel_bestand_abfragen(farbe=arguments["farbe"])
+        return CallToolResult(content=[TextContent(type="text", text=result)])
+
+    elif name == "patchkabel_katalog_abfragen":
+        result = patchkabel_katalog_abfragen(farbe=arguments["farbe"])
+        return CallToolResult(content=[TextContent(type="text", text=result)])
+
+    elif name == "laborraum_belegung_abfragen":
+        result = laborraum_belegung_abfragen(raum=arguments["raum"], tag=arguments["tag"])
+        return CallToolResult(content=[TextContent(type="text", text=result)])
+
+    else:
+        raise ValueError(f"Unbekanntes Tool: {name}")
 ```
 
 ### Registrierung der Handler beim Server
@@ -222,23 +276,22 @@ async def main():
 
 ```
 1. Client ruft list_tools() auf
-   → Server antwortet mit [TOOL_DESCRIPTION]
+   → Server antwortet mit [TOOL_DESCRIPTION, TOOL_KATALOG, TOOL_RAUM]
 
-2. Benutzer stellt Frage
-   → Client sendet an Claude API mit Tool-Definition
+2. Benutzer stellt Frage, z. B. "Was kostet ein gelbes Patchkabel beim Lieferanten?"
+   → Client sendet die Frage an das LLM (Ollama), im System-Prompt stehen die drei Tools
 
-3. Claude entscheidet Tool zu nutzen
-   → Claude gibt zurück: tool_use mit name="patchkabel_bestand_abfragen" 
-                        und arguments={"farbe": "blau"}
+3. LLM entscheidet, welches Tool passt, und mit welchen Parametern
+   → LLM antwortet: {"tool": "patchkabel_katalog_abfragen", "farbe": "gelb"}
 
-4. Client ruft call_tool() auf
-   → Server führt patchkabel_bestand_abfragen(farbe="blau") aus
+4. Client ruft call_tool() auf (tools/call)
+   → Server führt patchkabel_katalog_abfragen(farbe="gelb") aus
 
 5. Server gibt Ergebnis zurück
-   → "Bestand blaue 1m Patchkabel: 45 Stück"
+   → "Katalog 1m Patchkabel gelb: 1.80 Euro pro Stück, Lieferzeit 5 Werktage"
 
-6. Client sendet Ergebnis an Claude
-   → Claude formuliert finale Antwort für Benutzer
+6. Client sendet Ergebnis an das LLM
+   → LLM formuliert finale Antwort für Benutzer
 ```
 
 ## Zusammenfassung
@@ -252,8 +305,8 @@ Ein MCP Tool besteht aus:
 
 ## Autoren und Urheberrecht
 - Created by: Michael Lotter
-- Date: 12/2025, aktualisiert 11/2026 (Anpassung an mcp 2.x)
-- Version: v1.1
+- Date: 12/2025, aktualisiert 11/2026 (Anpassung an mcp 2.x, drei Tools)
+- Version: v1.2
 
 ![line](images/banner.png)
 <p align="center">

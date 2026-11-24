@@ -223,6 +223,41 @@ Bei **initialize** und **tools/list** stehen rechts die Antwortzeit und **OK**: 
           },
           "required": ["farbe"]
         }
+      },
+      {
+        "name": "patchkabel_katalog_abfragen",
+        "description": "Fragt im Katalog des Lieferanten Preis und Lieferzeit für 1m Patchkabel einer Farbe ab. Für Nachbestellungen. Liefert KEINEN Lagerbestand.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "farbe": {
+              "type": "string",
+              "description": "Die Farbe des Patchkabels",
+              "enum": ["blau", "rot", "gelb", "gruen", "schwarz"]
+            }
+          },
+          "required": ["farbe"]
+        }
+      },
+      {
+        "name": "laborraum_belegung_abfragen",
+        "description": "Prüft, ob ein Laborraum (104 oder 105) an einem Wochentag belegt oder frei ist.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "raum": {
+              "type": "string",
+              "description": "Die Raumnummer des Laborraums",
+              "enum": ["104", "105"]
+            },
+            "tag": {
+              "type": "string",
+              "description": "Der Wochentag",
+              "enum": ["montag", "dienstag", "mittwoch", "donnerstag", "freitag"]
+            }
+          },
+          "required": ["raum", "tag"]
+        }
       }
     ]
   }
@@ -230,6 +265,8 @@ Bei **initialize** und **tools/list** stehen rechts die Antwortzeit und **OK**: 
 ```
 
 Die Reihenfolge der Felder kann in der Anzeige abweichen, der Inhalt ist derselbe.
+
+**Beobachten Sie:** Die Antwort enthält eine **Liste** `tools` mit drei Einträgen. Jeder Eintrag hat dieselbe Struktur aus `name`, `description` und `inputSchema`. Genau diese Liste übernimmt `mcp_client_ollama.py` in den System-Prompt des LLM.
 
 ---
 
@@ -253,13 +290,15 @@ Die Reihenfolge der Felder kann in der Anzeige abweichen, der Inhalt ist derselb
 
 Vergleichen Sie mit `TOOL_DESCRIPTION` in `mcp_server.py`: Genau diese Beschreibung bekommt später auch das LLM zu sehen.
 
+Vergleichen Sie auch das `inputSchema` von `laborraum_belegung_abfragen`: Es hat **zwei** Eigenschaften (`raum`, `tag`), und beide stehen unter `required`.
+
 ---
 
 ### Schritt 9: Tool im Reiter Tools auswählen
 
 **Aktion:**
 1. Klick oben in der Mitte auf den Reiter **Tools** (neben **Servers**)
-2. Links erscheint die Liste **Tools (1)** – das Ergebnis von `tools/list`. Klick auf **patchkabel_bestand_abfragen**
+2. Links erscheint die Liste **Tools (3)** – das Ergebnis von `tools/list`. Klick auf **patchkabel_bestand_abfragen**
 
 **Rechts sehen Sie:**
 - den Namen des Tools und darunter seine **Beschreibung** (`description`)
@@ -298,12 +337,20 @@ Bestand blaue 1m Patchkabel: 45 Stück
 
 Mit dem **X** links neben „Results“ kehren Sie zum Formular zurück. Probieren Sie auch **rot** und **gesamt** aus.
 
+**Die beiden weiteren Tools ausprobieren:**
+1. Links **patchkabel_katalog_abfragen** wählen, bei **farbe** z. B. **gelb**, **Execute Tool**
+   → `Katalog 1m Patchkabel gelb: 1.80 Euro pro Stück, Lieferzeit 5 Werktage`
+2. Links **laborraum_belegung_abfragen** wählen. Das Formular hat jetzt **zwei** Pflichtfelder (**raum \***, **tag \***). Wählen Sie **104** und **donnerstag**, **Execute Tool**
+   → `Raum 104 ist am Donnerstag belegt (Klasse 10b)`
+
+**Beobachten Sie:** Im Inspector wählen **Sie** das Tool und die Parameter aus. Im Lab mit `mcp_client_ollama.py` übernimmt genau diese Auswahl das LLM.
+
 ---
 
 ### Schritt 11: tools/call Request analysieren
 
 **Aktion:**
-1. Rechts unter **Protocol → Messages** ist ein neuer Eintrag hinzugekommen: **tools/call**
+1. Rechts unter **Protocol → Messages** ist für jede Ausführung ein neuer Eintrag hinzugekommen: **tools/call**. Wählen Sie den ältesten (Aufruf mit **blau**). Die Aufrufe der anderen Tools sind gleich aufgebaut, nur `name` und `arguments` unterscheiden sich.
 2. Klappen Sie ihn auf und sehen Sie sich den Block **„Parameters:“** an
 
 **Sie sehen (JSON):**
@@ -363,6 +410,8 @@ Je nach Inspector-Version steht zusätzlich ein Abschnitt `_meta` mit `progressT
 
 - Warum ist die Trennung zwischen Tool-Beschreibung und -Implementierung wichtig?
 
+- Im Inspector wählen Sie das Tool selbst aus. Wer übernimmt diese Auswahl im Lab mit `mcp_client_ollama.py`, und welche Informationen hat er dafür?
+
 ---
 
 ## Fehlerbehebung
@@ -375,8 +424,8 @@ Je nach Inspector-Version steht zusätzlich ein Abschnitt `_meta` mit `progressT
 
 ## Autoren und Urheberrecht
 - Created by: Michael Lotter
-- Date: 12/2025, aktualisiert 11/2026 (mcp 2.x, aktueller Inspector, Windows-Befehle)
-- Version: v1.1
+- Date: 12/2025, aktualisiert 11/2026 (mcp 2.x, aktueller Inspector, Windows-Befehle, drei Tools)
+- Version: v1.2
 
 ![line](images/banner.png)
 <p align="center">
