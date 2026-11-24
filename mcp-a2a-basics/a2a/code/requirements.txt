@@ -1,0 +1,9 @@
+# Getestet mit Python 3.11 und 3.13, a2a-sdk 1.3.1, mcp 2.3.0 und ollama 0.6.3 (11/2026)
+# a2a-sdk ab 1.0 setzt die A2A-Spezifikation 1.0 um (SendMessage, ROLE_USER, ...)
+# und laeuft NICHT mit Code fuer a2a-sdk 0.x (message/send, "kind": "text").
+a2a-sdk[http-server]>=1.3,<2   # A2A-Server und -Client
+uvicorn>=0.54,<1               # HTTP-Server fuer den Lager-Agenten
+mcp>=2.3,<3                    # Lager-Agent nutzt sein MCP-Tool (Server-API von mcp 2.x)
+ollama>=0.6,<0.7               # Planungs-Agent mit lokalem LLM
+anthropic                      # nur fuer planungs_agent.py (optional)
+python-dotenv                  # liest .env (nur Anthropic)

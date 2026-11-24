@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "SendMessage",
+  "params": {
+    "message": {
+      "role": "ROLE_USER",
+      "messageId": "msg-003",
+      "parts": [
+        { "data": { "farbe": "rot", "menge": 40 }, "mediaType": "application/json" }
+      ]
+    }
+  }
+}

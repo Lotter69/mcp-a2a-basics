@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "SendMessage",
+  "params": {
+    "message": {
+      "role": "ROLE_USER",
+      "messageId": "msg-001",
+      "parts": [
+        { "text": "Haben wir 30 blaue Patchkabel?" }
+      ]
+    }
+  }
+}
